@@ -40,4 +40,12 @@ foreach($asset in @(@{Path=$exe;Name='Awl.exe';Type='application/vnd.microsoft.p
 $versionFile=Join-Path $projectRoot 'VERSION'
 $currentVersion=if(Test-Path -LiteralPath $versionFile){(Get-Content -LiteralPath $versionFile -Raw).Trim()}else{''}
 if($currentVersion -ne $Version){[IO.File]::WriteAllText($versionFile,$Version+"`n",[Text.UTF8Encoding]::new($false))}
+Push-Location $projectRoot
+try{
+ git add VERSION
+ git diff --cached --quiet
+ if($LASTEXITCODE -ne 0){git commit -m ('Release '+$tag)|Out-Null}
+ git -c credential.username=OverRide-00 push origin main|Out-Null
+ if($LASTEXITCODE -ne 0){throw 'The release was published, but pushing VERSION to the repository failed.'}
+}finally{Pop-Location}
 Write-Output ('Published '+$release.html_url)
