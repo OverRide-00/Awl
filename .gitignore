@@ -1,0 +1,24 @@
+# Build output and generated files
+dist/
+artifacts/
+/releases/
+.tools/
+
+# User and machine-specific state
+build-profile/*
+!build-profile/.gitkeep
+templates/My Templates/*
+templates/Imported Templates/*
+templates/Public Templates/*
+!templates/My Templates/.gitkeep
+!templates/Imported Templates/.gitkeep
+!templates/Public Templates/.gitkeep
+*.user
+*.log
+*.bak
+
+# Editor and OS files
+.vs/
+.vscode/
+Thumbs.db
+Desktop.ini
