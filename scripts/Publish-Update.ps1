@@ -37,5 +37,7 @@ foreach($asset in @(@{Path=$exe;Name='Awl.exe';Type='application/vnd.microsoft.p
  $uri=$uploadBase+'?name='+[Uri]::EscapeDataString($asset.Name)
  Invoke-WebRequest -Method Post -Uri $uri -Headers $headers -ContentType $asset.Type -InFile $asset.Path|Out-Null
 }
-Set-Content -LiteralPath (Join-Path $projectRoot 'VERSION') -Value $Version -Encoding ASCII
+$versionFile=Join-Path $projectRoot 'VERSION'
+$currentVersion=if(Test-Path -LiteralPath $versionFile){(Get-Content -LiteralPath $versionFile -Raw).Trim()}else{''}
+if($currentVersion -ne $Version){[IO.File]::WriteAllText($versionFile,$Version+"`n",[Text.UTF8Encoding]::new($false))}
 Write-Output ('Published '+$release.html_url)
