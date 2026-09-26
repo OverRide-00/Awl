@@ -179,23 +179,30 @@ partial class Shell : Application {
   ApplyTheme();signature="";RefreshApps();InitMedia();Dispatcher.BeginInvoke(DispatcherPriority.ApplicationIdle,new Action(StartRollingCapture));if(!devMode)Dispatcher.BeginInvoke(DispatcherPriority.ApplicationIdle,new Action(()=>CheckForUpdates(false)));if(openLauncher){if(openConfigPreview)activeTab="Config";ToggleLauncher();Render(launcher,"launcher-preview.png");}
  }
  async void InitMedia() {try{manager=await System.WindowsRuntimeSystemExtensions.AsTask<GlobalSystemMediaTransportControlsSessionManager>(GlobalSystemMediaTransportControlsSessionManager.RequestAsync());}catch(Exception e){Log("Media: "+e.Message);} await StatusUpdate();}
- void Layout() {top.Left=0;top.Top=0;top.Width=SystemParameters.PrimaryScreenWidth;DockLayout();}
+ void Layout() {var bounds=SurfaceBounds("Top toolbar");top.Left=bounds.Left;top.Top=bounds.Top;top.Width=bounds.Width;DockLayout();UpdateDisplayMirrors();}
  void Hover() {
   if(stop.WaitOne(0)){Quit();return;}if(widgetReload!=null&&widgetReload.WaitOne(0))ReloadBuilderDesktop();if(showLauncher!=null&&showLauncher.WaitOne(0)){if(launcher==null||!launcher.IsVisible)ToggleLauncher();else launcher.Activate();}Layout();HideNativeTaskbar();RedirectNativeStart();if(top!=null)ReadableTopText(top);
   if(altTabShowing&&(GetAsyncKeyState(0x12)&0x8000)==0&&(GetAsyncKeyState(0xA4)&0x8000)==0&&(GetAsyncKeyState(0xA5)&0x8000)==0)FinishAltTab(true);
   Native.POINT p; Native.GetCursorPos(out p); var source=PresentationSource.FromVisual(top); if(source==null)return; var point=source.CompositionTarget.TransformFromDevice.Transform(new Point(p.X,p.Y));
-  var screen=Forms.Screen.PrimaryScreen.Bounds;int stripHeight=(int)Math.Ceiling(top.Height*source.CompositionTarget.TransformToDevice.M22);topCovered=false;bool fullscreenCover=false;
+  var screen=SurfaceBounds("Top toolbar");int stripHeight=(int)Math.Ceiling(top.Height*source.CompositionTarget.TransformToDevice.M22);topCovered=false;bool fullscreenCover=false;
   Native.EnumWindows(delegate(IntPtr h,IntPtr unused){
    if(!Native.IsWindowVisible(h)||Native.IsIconic(h)||(Native.GetWindowLong(h,-20)&0x80)!=0)return true;
    uint pid;Native.GetWindowThreadProcessId(h,out pid);if(pid==selfPid)return true;int cloaked;Native.DwmGetWindowAttribute(h,14,out cloaked,4);if(cloaked!=0)return true;
    var cls=new StringBuilder(128);Native.GetClassName(h,cls,128);if(cls.ToString()=="Progman"||cls.ToString()=="WorkerW"||cls.ToString().Contains("TrayWnd"))return true;
    Native.RECT r;if(Native.GetWindowRect(h,out r)&&r.Right>screen.Left&&r.Left<screen.Right&&r.Bottom>screen.Top&&r.Top<screen.Top+stripHeight){topCovered=true;int style=Native.GetWindowLong(h,-16);bool fills=r.Left<=screen.Left&&r.Top<=screen.Top&&r.Right>=screen.Right&&r.Bottom>=screen.Bottom;fullscreenCover=fills&&(style&0x00C00000)==0;return false;}return true;
   },IntPtr.Zero);
-  var now=DateTime.Now;bool topEdge=point.X>=0&&point.X<top.Width&&point.Y>=0&&point.Y<=2;
+  var now=DateTime.Now;bool pointerInTop=p.X>=screen.Left&&p.X<screen.Right&&p.Y>=screen.Top&&p.Y<=screen.Top+stripHeight;bool topEdge=p.X>=screen.Left&&p.X<screen.Right&&p.Y>=screen.Top&&p.Y<=screen.Top+2;
   if(topEdge){if(topEdgeSince==DateTime.MinValue)topEdgeSince=now;}else topEdgeSince=DateTime.MinValue;
   bool reveal=topEdgeSince!=DateTime.MinValue&&(now-topEdgeSince).TotalMilliseconds>=350;
-  if(top.IsVisible&&top.IsMouseOver)lastTopHover=now;
-  bool popupOpen=systemPopup!=null&&systemPopup.IsOpen,hoverHold=(now-lastTopHover).TotalMilliseconds<700;bool showTop=cfg.ShowTop&&(popupOpen||!cfg.TopAutoHide||!topCovered||reveal||hoverHold);UpdateTopWorkspace(showTop&&topCovered&&!fullscreenCover&&(reveal||top.IsMouseOver||hoverHold||popupOpen),showTop&&topCovered&&fullscreenCover,stripHeight);top.Visibility=showTop?Visibility.Visible:Visibility.Hidden;
+  if(pointerInTop)lastTopHover=now;
+  bool popupOpen=systemPopup!=null&&systemPopup.IsOpen;
+  if(pointerInTop||popupOpen||reveal){topReserveLatched=true;topReserveUntil=now.AddMilliseconds(Math.Max(900,cfg.HideDelay));}
+  else if(topReserveLatched&&now>=topReserveUntil)topReserveLatched=false;
+  bool hoverHold=topReserveLatched||(now-lastTopHover).TotalMilliseconds<700;
+  bool showTop=cfg.ShowTop&&(popupOpen||!cfg.TopAutoHide||!topCovered||reveal||hoverHold);
+  bool desktopReserve=showTop&&!topCovered&&!fullscreenCover;
+  bool reserve=showTop&&!fullscreenCover&&(!cfg.TopAutoHide||desktopReserve||topReserveLatched);
+  UpdateTopWorkspace(reserve,showTop&&fullscreenCover,stripHeight,SurfaceScreen("Top toolbar"));top.Visibility=showTop?Visibility.Visible:Visibility.Hidden;
   OutsideClick(point);bool edge=DockEdge(point)&&DateTime.Now>dockDismissedUntil;
   var menu=((FrameworkElement)dock.Content).ContextMenu;
   if(appMenuOpen||DateTime.Now>dockDismissedUntil&&(!cfg.DockAutoHide||edge||dockWanted&&dock.IsMouseOver||pins.IsOpen||menu!=null&&menu.IsOpen||launcher!=null&&launcher.IsVisible)){lastHover=DateTime.Now;AnimateDock(true);}
@@ -216,10 +223,10 @@ partial class Shell : Application {
   },IntPtr.Zero);
   string sig=String.Join("|",windows.Select(w=>w.Item1+":"+w.Item2));if(sig==signature&&apps.Children.Count>0)return;signature=sig;
   double taskbarScale=SurfaceScale("Taskbar");apps.Children.Clear();var pinnedButton=Button("\uE718","Pinned applications",ShowPins,true);pinnedButton.Width=42*taskbarScale;pinnedButton.Height=42*taskbarScale;pinnedButton.FontSize=20*taskbarScale;pinnedButton.Padding=new Thickness(7*taskbarScale,4*taskbarScale,7*taskbarScale,4*taskbarScale);apps.Children.Add(pinnedButton);Divider(false);
-  int limit=Math.Max(3,(int)((SystemParameters.PrimaryScreenWidth-240)/(taskbarScale*(cfg.AppLabels?162:cfg.DockIconSize+cfg.IconSpacing+9)))),n=0;
+  var taskbarBounds=SurfaceBounds("Taskbar");int limit=Math.Max(3,(int)((taskbarBounds.Width-240)/(taskbarScale*(cfg.AppLabels?162:cfg.DockIconSize+cfg.IconSpacing+9)))),n=0;
   foreach(var item in windows.Take(limit)) {var win=item;var b=Button("\uE737",win.Item2,()=>{if(Native.IsIconic(win.Item1))Native.ShowWindowAsync(win.Item1,9);Native.SetForegroundWindow(win.Item1);},true);b.Width=(cfg.AppLabels?160:cfg.DockIconSize+cfg.IconSpacing+7)*taskbarScale;b.Height=42*taskbarScale;b.FontSize=20*taskbarScale;b.Padding=new Thickness(7*taskbarScale,4*taskbarScale,7*taskbarScale,4*taskbarScale);var icon=Icon(win.Item3);if(icon!=null)b.Content=new Image {Source=Tone(icon),Opacity=cfg.IconOpacity,Width=cfg.DockIconSize*taskbarScale,Height=cfg.DockIconSize*taskbarScale};if(cfg.AppLabels){var row=new StackPanel{Orientation=Orientation.Horizontal};var art=b.Content as UIElement;b.Content=null;if(art!=null)row.Children.Add(art);var label=Text(win.Item2,11*taskbarScale);label.Width=100*taskbarScale;label.Margin=new Thickness(6*taskbarScale,0,0,0);label.TextWrapping=TextWrapping.NoWrap;label.TextTrimming=TextTrimming.CharacterEllipsis;row.Children.Add(label);b.Content=row;}AppMenu(b,win.Item1);apps.Children.Add(b);n++;}
   if(windows.Count>limit) {var moreWindows=Button("+"+(windows.Count-limit),"More windows",()=>{var m=new ContextMenu();ThemeContextMenu(m);foreach(var item in windows.Skip(limit)){var w=item;var mi=new MenuItem{Header=w.Item2};mi.Click+=delegate{Native.ShowWindowAsync(w.Item1,9);Native.SetForegroundWindow(w.Item1);};m.Items.Add(mi);}m.IsOpen=true;});moreWindows.Width=48*taskbarScale;moreWindows.Height=42*taskbarScale;moreWindows.FontSize=12*taskbarScale;apps.Children.Add(moreWindows);}
-  Divider(true);var start=Button("","Start menu",()=>ToggleLauncher(),true);start.Width=42*taskbarScale;start.Height=42*taskbarScale;start.Padding=new Thickness(7*taskbarScale);var dots=new UniformGrid{Rows=3,Columns=3,Width=21*taskbarScale,Height=21*taskbarScale};for(int i=0;i<9;i++)dots.Children.Add(new Border{Background=ink,CornerRadius=new CornerRadius(1),Margin=new Thickness(1.5*taskbarScale)});start.Content=dots;apps.Children.Add(start);dockLength=Math.Min((cfg.Position=="Left"||cfg.Position=="Right"?SystemParameters.PrimaryScreenHeight:SystemParameters.PrimaryScreenWidth)-24,158+n*(cfg.AppLabels?160:cfg.DockIconSize+cfg.IconSpacing+7)+(windows.Count>limit?50:0));Layout();
+  Divider(true);var start=Button("","Start menu",()=>ToggleLauncher(),true);start.Width=42*taskbarScale;start.Height=42*taskbarScale;start.Padding=new Thickness(7*taskbarScale);var dots=new UniformGrid{Rows=3,Columns=3,Width=21*taskbarScale,Height=21*taskbarScale};for(int i=0;i<9;i++)dots.Children.Add(new Border{Background=ink,CornerRadius=new CornerRadius(1),Margin=new Thickness(1.5*taskbarScale)});start.Content=dots;apps.Children.Add(start);dockLength=Math.Min((cfg.Position=="Left"||cfg.Position=="Right"?taskbarBounds.Height:taskbarBounds.Width)-24,158+n*(cfg.AppLabels?160:cfg.DockIconSize+cfg.IconSpacing+7)+(windows.Count>limit?50:0));Layout();
  }
  void ShowPins() {
   if(pins.IsOpen){pins.IsOpen=false;return;}pins.Placement=cfg.Position=="Top"?PlacementMode.Bottom:cfg.Position=="Left"?PlacementMode.Right:cfg.Position=="Right"?PlacementMode.Left:PlacementMode.Top;pins.Child=BuildPins();pins.IsOpen=true;
