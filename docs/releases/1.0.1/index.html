@@ -1,0 +1,25 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#0b1515">
+  <meta name="description" content="Awl 1.0.1 fixes wallpaper colors when switching away from a template.">
+  <title>Awl 1.0.1 — What's new</title>
+  <style>
+    :root{color-scheme:dark;--bg:#0b1515;--panel:#182a26;--line:#426b58;--text:#e9f5ee;--muted:#a8bdb2;--accent:#86dfb2}
+    *{box-sizing:border-box}body{margin:0;background:radial-gradient(ellipse 700px 400px at 85% 0,#2454446b,transparent),var(--bg);color:var(--text);font:16px/1.6 "Segoe UI",system-ui,sans-serif}a{color:var(--accent)}.wrap{width:min(880px,calc(100% - 40px));margin:auto}.top{border-bottom:1px solid #ffffff1a}.top .wrap{min-height:68px;display:flex;align-items:center;gap:12px}.mark{display:grid;place-items:center;width:32px;height:32px;border-radius:10px;background:#86dfb2;color:#092619;font-weight:800}.brand{font-size:20px;font-weight:750;letter-spacing:-.04em}.version{margin-left:auto;border:1px solid #86dfb255;border-radius:99px;padding:3px 11px;color:var(--accent);font-size:12px}main{padding:76px 0 100px}.eyebrow{color:var(--accent);font-size:12px;font-weight:750;letter-spacing:.17em;text-transform:uppercase}h1{font-size:clamp(42px,7vw,76px);line-height:1.04;letter-spacing:-.06em;margin:14px 0 22px}h2{font-size:23px;letter-spacing:-.035em;margin:0 0 12px}p{color:var(--muted)}.lead{font-size:20px;max-width:700px}.card{margin-top:38px;padding:28px;border:1px solid var(--line);border-radius:20px;background:var(--panel)}.card p:last-child{margin-bottom:0}.steps{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-top:20px}.step{border:1px solid #ffffff1c;border-radius:13px;padding:17px;background:#ffffff08}.step strong{display:block;color:var(--text);margin-bottom:7px}.step span{color:var(--muted);font-size:13px}.actions{display:flex;flex-wrap:wrap;gap:10px;margin-top:34px}.button{display:inline-flex;align-items:center;min-height:43px;padding:9px 16px;border-radius:10px;background:var(--accent);color:#08241a;text-decoration:none;font-weight:750}.button.secondary{background:#21382f;border:1px solid var(--line);color:var(--text)}footer{border-top:1px solid #ffffff1a;padding:28px 0;color:var(--muted);font-size:12px}@media(max-width:650px){.steps{grid-template-columns:1fr}main{padding-top:52px}.card{padding:20px}}
+  </style>
+</head>
+<body>
+  <header class="top"><div class="wrap"><span class="mark" aria-hidden="true">A</span><span class="brand">Awl</span><span class="version">1.0.1</span></div></header>
+  <main class="wrap">
+    <div class="eyebrow">Patch update · 1.0.1</div>
+    <h1>Your wallpaper,<br>your colors.</h1>
+    <p class="lead">Awl 1.0.1 fixes a template color lock: after you select a different Wallpaper Engine wallpaper and reload, Awl now draws its colors from that wallpaper instead of the previous template.</p>
+    <section class="card" aria-labelledby="fixed"><h2 id="fixed">What changed</h2><p>Choosing a custom wallpaper in Awl also deactivates the active template. The template remains available in Config, ready to apply again whenever you want it.</p><div class="steps"><div class="step"><strong>Choose</strong><span>Pick another wallpaper in Wallpaper Engine or set one in Awl.</span></div><div class="step"><strong>Reload</strong><span>Use the reload control in Quick to read the current Wallpaper Engine selection.</span></div><div class="step"><strong>Reapply</strong><span>Click the template again later to restore its wallpaper and colors.</span></div></div></section>
+    <div class="actions"><a class="button" href="https://github.com/OverRide-00/Awl/releases/tag/v1.0.1">Get Awl 1.0.1 ↗</a><a class="button secondary" href="https://github.com/OverRide-00/Awl/releases/tag/v1.0.0">See 1.0.0 features</a></div>
+  </main>
+  <footer><div class="wrap">Awl 1.0.1 · Wallpaper and template color fix</div></footer>
+</body>
+</html>
