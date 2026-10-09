@@ -1,0 +1,22 @@
+{
+  "format": "Awl Plugin",
+  "manifestVersion": 1,
+  "id": "awl.motion-showcase",
+  "name": "Awl Motion Showcase",
+  "version": "0.1.4",
+  "type": "Visual",
+  "author": "Awl",
+  "icon": "icon.png",
+  "motion": "motion.json",
+  "description": "Start/search/popup motion, ball-like app bounces, sliding taskbar order, smooth toggles, growing slider knobs, and morphing pill selections. Requires Awl Motion API.",
+  "categories": [
+    "Animations & Motion"
+  ],
+  "tags": [
+    "animation",
+    "procedural",
+    "interactive",
+    "taskbar",
+    "start-menu"
+  ]
+}

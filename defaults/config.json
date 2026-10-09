@@ -516,6 +516,17 @@
   "LaunchCounts": {},
   "LastLaunch": {},
   "ReplaceWindowsStart": true,
+  "StartSearchModifier": "Ctrl",
+  "CapturePrintScreen": false,
+  "KeyBinds": {
+    "StartFallback": "Ctrl+Escape",
+    "QuickSearch": "Ctrl+Alt+Space",
+    "HiddenMode": "Ctrl+Alt+H",
+    "QuitAwl": "Ctrl+Alt+Q",
+    "CaptureTool": "Alt+Shift+R",
+    "AppSwitcher": "Alt+Tab",
+    "WidgetBuilder": "Ctrl+Win+W"
+  },
   "TopItemSpacing": 14,
   "QuickOptionIconSize": 22,
   "AppSort": "Name",

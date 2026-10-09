@@ -1,0 +1,81 @@
+{
+  "version": 1,
+  "filters": {
+    "types": [
+      "Core",
+      "Visual",
+      "Both"
+    ],
+    "categories": [
+      "Productivity",
+      "Automation",
+      "Widgets & Data",
+      "Icons & Cursors",
+      "Themes & Color",
+      "Animations & Motion",
+      "System Tweaks",
+      "Developer Tools",
+      "Fun & Misc"
+    ]
+  },
+  "items": [
+    {
+      "id": "awl.animation-api",
+      "name": "Awl Motion API",
+      "summary": "A compatibility service for smooth procedural, spring, wave, and interactive animations used by other Core plugins.",
+      "type": "Core",
+      "version": "0.1.1",
+      "author": "Awl",
+      "downloadUrl": "Core/awl.animation-api-0.1.1.awlplugin",
+      "categories": [
+        "Animations & Motion",
+        "Developer Tools"
+      ],
+      "tags": [
+        "animation",
+        "procedural",
+        "interactive",
+        "api"
+      ],
+      "iconUrl": "Core/animation-api/icon.png"
+    },
+    {
+      "id": "awl.ratio",
+      "name": "Awl Ratio",
+      "summary": "Captures widget locations against a display baseline and restores their proportional positions when the screen size changes.",
+      "type": "Core",
+      "version": "0.1.1",
+      "author": "Awl",
+      "downloadUrl": "Core/awl.ratio-0.1.1.awlplugin",
+      "categories": [
+        "Widgets & Data",
+        "System Tweaks"
+      ],
+      "tags": [
+        "ratio",
+        "display",
+        "layout",
+        "widgets"
+      ],
+      "iconUrl": "Core/ratio/icon.png"
+    },
+    {
+      "id": "awl.motion-showcase",
+      "name": "Awl Motion Showcase",
+      "summary": "Start/search/popup motion, ball-like app bounces, sliding taskbar order, smooth toggles, growing slider knobs, and morphing pill selections. Requires Awl Motion API.",
+      "type": "Visual",
+      "version": "0.1.4",
+      "author": "Awl",
+      "downloadUrl": "Visual/awl.motion-showcase-0.1.4.zip",
+      "categories": [
+        "Animations & Motion"
+      ],
+      "tags": [
+        "animation",
+        "procedural",
+        "interactive"
+      ],
+      "iconUrl": "Visual/motion-showcase/icon.png"
+    }
+  ]
+}

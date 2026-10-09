@@ -1,0 +1,23 @@
+{
+  "format": "Awl Plugin",
+  "manifestVersion": 1,
+  "id": "awl.animation-api",
+  "name": "Awl Motion API",
+  "version": "0.1.1",
+  "type": "Core",
+  "entryAssembly": "AnimationApi.dll",
+  "entryType": "Awl.Motion.AnimationApiPlugin",
+  "author": "Awl",
+  "description": "Compatibility service that gives Core plugins smooth procedural and interactive animations.",
+  "categories": [
+    "Animations & Motion",
+    "Developer Tools"
+  ],
+  "tags": [
+    "animation",
+    "procedural",
+    "interactive",
+    "api"
+  ],
+  "entryAssemblyDevMode": "AnimationApi.DevMode.dll"
+}

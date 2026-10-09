@@ -13,6 +13,36 @@ using Microsoft.Win32;
 
 namespace Awl { partial class Shell {
  string cursorSignature="";Cursor themedCursor;
+ const double MaximumWindowCornerRadius=100;
+ sealed class WindowCornerState { public uint ProcessId;public int Original,Applied; }
+ readonly Dictionary<IntPtr,WindowCornerState> windowCorners=new Dictionary<IntPtr,WindowCornerState>();
+ static int NativeCornerPreference(double radius){return radius<=0?1:radius<=12?3:2;}
+
+ void RestoreWindowCorner(IntPtr handle,WindowCornerState state){
+  uint pid;Native.GetWindowThreadProcessId(handle,out pid);int current;
+  // Do not overwrite a new window or a preference the owning app changed itself.
+  if(pid==state.ProcessId&&Native.DwmGetWindowAttribute(handle,33,out current,4)==0&&current==state.Applied){int original=state.Original;Native.DwmSetWindowAttribute(handle,33,ref original,4);}
+ }
+ void RestoreWindowCustomizations(){
+  foreach(var entry in windowCorners){try{RestoreWindowCorner(entry.Key,entry.Value);}catch{}}
+  windowCorners.Clear();
+ }
+ public string WindowCornerSelfTest(){
+  using(var window=new System.Windows.Forms.Form()){
+   IntPtr handle=window.Handle;int original,actual;
+   if(Native.DwmGetWindowAttribute(handle,33,out original,4)!=0)return "SKIPPED: native corner preferences unavailable on this Windows version";
+   uint pid;Native.GetWindowThreadProcessId(handle,out pid);
+   try{
+    foreach(int preference in new[]{1,3,2}){
+     int value=preference;
+     if(Native.DwmSetWindowAttribute(handle,33,ref value,4)!=0||Native.DwmGetWindowAttribute(handle,33,out actual,4)!=0||actual!=preference)return "FAILED: native corner round trip";
+     RestoreWindowCorner(handle,new WindowCornerState{ProcessId=pid,Original=original,Applied=preference});
+     if(Native.DwmGetWindowAttribute(handle,33,out actual,4)!=0||actual!=original)return "FAILED: original corner restoration";
+    }
+    return "Native corner presets and original preference restoration passed on isolated test window";
+   }finally{Native.DwmSetWindowAttribute(handle,33,ref original,4);}
+  }
+ }
 
  bool OrdinaryWindow(IntPtr handle){
   if(handle==IntPtr.Zero||!Native.IsWindowVisible(handle)||Native.IsIconic(handle)||Native.IsZoomed(handle))return false;
@@ -24,10 +54,23 @@ namespace Awl { partial class Shell {
  }
  void ApplyWindowCustomizations(){
   try{
-   int corner=cfg.WindowCornerRadius<=0?1:cfg.WindowCornerRadius<=12?3:2;
-   if(!devMode)Native.EnumWindows(delegate(IntPtr handle,IntPtr unused){if(!OrdinaryWindow(handle))return true;try{Native.DwmSetWindowAttribute(handle,33,ref corner,4);var frame=new Native.MARGINS{Left=cfg.WindowShadows?1:0,Right=cfg.WindowShadows?1:0,Top=cfg.WindowShadows?1:0,Bottom=cfg.WindowShadows?1:0};Native.DwmExtendFrameIntoClientArea(handle,ref frame);}catch{}return true;},IntPtr.Zero);
+   int corner=NativeCornerPreference(cfg.WindowCornerRadius);
+   var seen=new HashSet<IntPtr>();
+   if(!devMode)Native.EnumWindows(delegate(IntPtr handle,IntPtr unused){
+    if(!OrdinaryWindow(handle))return true;
+    try{
+     uint pid;Native.GetWindowThreadProcessId(handle,out pid);WindowCornerState state;int current;
+     if(Native.DwmGetWindowAttribute(handle,33,out current,4)!=0)return true;
+     if(!windowCorners.TryGetValue(handle,out state)||state.ProcessId!=pid){state=new WindowCornerState{ProcessId=pid,Original=current,Applied=current};windowCorners[handle]=state;}
+     seen.Add(handle);
+     // Only change rounding. Frame margins belong to the app: replacing them can
+     // erase Explorer's caption buttons. Native rounding also preserves hit testing.
+     if(state.Applied!=corner){if(Native.DwmSetWindowAttribute(handle,33,ref corner,4)==0)state.Applied=corner;}
+    }catch{}return true;
+   },IntPtr.Zero);
+   foreach(var handle in windowCorners.Keys.Where(h=>!seen.Contains(h)).ToArray()){RestoreWindowCorner(handle,windowCorners[handle]);windowCorners.Remove(handle);}
   }catch(Exception error){Log("Window styling: "+error.Message);}
-  ApplyShellShadowAndCursor();
+  // Theme/cursor changes already refresh shell visuals; polling must not recreate shadows.
  }
  void ApplySnapLayouts(){
   try{using(var key=Registry.CurrentUser.CreateSubKey("Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\Advanced")){key.SetValue("EnableSnapAssistFlyout",cfg.SnapLayouts?1:0,RegistryValueKind.DWord);key.SetValue("EnableSnapBar",cfg.SnapLayouts?1:0,RegistryValueKind.DWord);}using(var key=Registry.CurrentUser.CreateSubKey("Control Panel\\Desktop"))key.SetValue("WindowArrangementActive",cfg.SnapLayouts?"1":"0",RegistryValueKind.String);Native.SystemParametersInfo(0x0083,cfg.SnapLayouts?1u:0u,IntPtr.Zero,3);}

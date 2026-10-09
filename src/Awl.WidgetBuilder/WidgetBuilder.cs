@@ -17,18 +17,7 @@ namespace Awl { partial class Shell {
  Window builderWindow; WidgetBuilderProject builderProject; BuilderNode builderSelected;
  Canvas builderCanvas,logicCanvas; StackPanel builderProps,builderLayers,builderConsole,builderBlockProps; string builderTab="UI",builderPropertyTab="Layout"; BuilderBlock builderSelectedBlock; Dictionary<string,TextBlock> builderLiveReporterLabels=new Dictionary<string,TextBlock>();
  List<string> builderHistory=new List<string>(); int builderHistoryIndex=-1; bool builderPreview; DispatcherTimer builderTimer;
- HwndSource builderHotkeySource; const int BuilderHotkeyId=0x5442;
  string BuilderFile { get { return Path.Combine(Root,"widget-builder.json"); } }
-
- [DllImport("user32.dll")] static extern bool RegisterHotKey(IntPtr window,int id,uint modifiers,uint key);
- [DllImport("user32.dll")] static extern bool UnregisterHotKey(IntPtr window,int id);
- void EnsureBuilderHotkey(){
-  if(builderHotkeySource!=null||top==null)return;var handle=new WindowInteropHelper(top).Handle;
-  if(handle==IntPtr.Zero){top.SourceInitialized+=delegate{EnsureBuilderHotkey();};return;}
-  builderHotkeySource=HwndSource.FromHwnd(handle);if(builderHotkeySource==null)return;
-  builderHotkeySource.AddHook(BuilderHotkeyMessage);if(!RegisterHotKey(handle,BuilderHotkeyId,0x0002|0x0008,0x57))Log("Widget Builder hotkey unavailable: "+Marshal.GetLastWin32Error());
- }
- IntPtr BuilderHotkeyMessage(IntPtr window,int message,IntPtr wparam,IntPtr lparam,ref bool handled){if(message==0x0312&&wparam.ToInt32()==BuilderHotkeyId){if(WidgetBuilderInstalled())Dispatcher.BeginInvoke(new Action(LaunchWidgetBuilderExecutable));handled=true;}return IntPtr.Zero;}
 
  string WidgetBuilderExecutable(){return System.IO.Path.Combine(System.IO.Path.GetDirectoryName(typeof(Shell).Assembly.Location)??"","Awl.WidgetBuilder.exe");}
  bool WidgetBuilderInstalled(){string executable=WidgetBuilderExecutable();return System.IO.File.Exists(executable)&&!String.Equals(System.IO.Path.GetFullPath(executable),System.IO.Path.GetFullPath(typeof(Shell).Assembly.Location),StringComparison.OrdinalIgnoreCase);}

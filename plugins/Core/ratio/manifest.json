@@ -1,0 +1,24 @@
+{
+  "format": "Awl Plugin",
+  "manifestVersion": 1,
+  "id": "awl.ratio",
+  "name": "Awl Ratio",
+  "version": "0.1.1",
+  "type": "Core",
+  "entryAssembly": "RatioPlugin.dll",
+  "entryType": "Awl.Ratio.RatioPlugin",
+  "icon": "Ratio",
+  "author": "Awl",
+  "description": "Keeps widget locations proportional when the display size changes.",
+  "categories": [
+    "Widgets & Data",
+    "System Tweaks"
+  ],
+  "tags": [
+    "ratio",
+    "display",
+    "layout",
+    "widgets"
+  ],
+  "entryAssemblyDevMode": "RatioPlugin.DevMode.dll"
+}

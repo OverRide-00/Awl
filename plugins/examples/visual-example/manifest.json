@@ -1,0 +1,13 @@
+{
+  "format": "Awl Plugin",
+  "manifestVersion": 1,
+  "id": "awl.example.visual",
+  "name": "Example Visual Theme",
+  "version": "1.0.0",
+  "author": "Awl",
+  "description": "An authoring example for CSS design tokens.",
+  "type": "Visual",
+  "style": "style.css",
+  "categories": ["Appearance"],
+  "tags": ["example", "theme"]
+}

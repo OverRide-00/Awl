@@ -1,0 +1,20 @@
+{
+  "format": "Awl Plugin",
+  "manifestVersion": 1,
+  "id": "awl.example.script-action",
+  "name": "Example Script Action",
+  "version": "1.0.0",
+  "author": "Awl",
+  "description": "Adds a Config action without compiling a DLL.",
+  "type": "Core",
+  "categories": ["Developer Tools"],
+  "actions": [
+    {
+      "id": "hello",
+      "title": "Run example action",
+      "description": "Writes a timestamp into the plugin folder.",
+      "target": "hello.ps1",
+      "placement": "Config"
+    }
+  ]
+}

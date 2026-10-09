@@ -19,6 +19,15 @@ namespace Awl { partial class Shell {
   return ScreenByName(selected);
  }
  System.Drawing.Rectangle SurfaceBounds(string surface){return SurfaceScreen(surface).Bounds;}
+ Rect DipBounds(System.Drawing.Rectangle bounds){
+  var source=dock==null?null:PresentationSource.FromVisual(dock);
+  if(source==null||source.CompositionTarget==null)return new Rect(bounds.Left,bounds.Top,bounds.Width,bounds.Height);
+  var transform=source.CompositionTarget.TransformFromDevice;
+  var topLeft=transform.Transform(new Point(bounds.Left,bounds.Top));
+  var bottomRight=transform.Transform(new Point(bounds.Right,bounds.Bottom));
+  return new Rect(topLeft,bottomRight);
+ }
+ Rect SurfaceDipBounds(string surface){return DipBounds(SurfaceBounds(surface));}
  System.Drawing.Rectangle SurfaceWorkArea(string surface){return SurfaceScreen(surface).WorkingArea;}
  string[] MonitorChoices(bool allowAll){var values=new List<string>{"Primary"};if(allowAll)values.Add("All");values.AddRange(Forms.Screen.AllScreens.Where(x=>!x.Primary).Select(x=>x.DeviceName));return values.Distinct(StringComparer.OrdinalIgnoreCase).ToArray();}
  string MonitorLabel(string value){if(value=="Primary")return "Primary display";if(value=="All")return "All displays";var screen=ScreenByName(value);int index=Array.IndexOf(Forms.Screen.AllScreens,screen)+1;return "Display "+index+"  "+screen.Bounds.Width+" × "+screen.Bounds.Height;}
@@ -47,7 +56,7 @@ namespace Awl { partial class Shell {
  }
  void CloseDisplayMirrors(List<Window> windows){foreach(var window in windows.ToArray())try{window.Close();}catch{}windows.Clear();}
  void RefreshDisplayMirrors(){displayMirrorSignature="";CloseDisplayMirrors(topDisplayMirrors);CloseDisplayMirrors(taskbarDisplayMirrors);UpdateDisplayMirrors();}
- void LayoutTaskbarMirror(Window mirror,System.Drawing.Rectangle bounds){bool vertical=cfg.Position=="Left"||cfg.Position=="Right";mirror.Width=dock.Width;mirror.Height=dock.Height;double gap=cfg.Style=="Hug"?0:cfg.Gap;mirror.Left=cfg.Position=="Left"?bounds.Left+gap:cfg.Position=="Right"?bounds.Right-mirror.Width-gap:bounds.Left+(bounds.Width-mirror.Width)/2;if(!vertical&&cfg.DockAlignment!="Center")mirror.Left=cfg.DockAlignment=="Left"?bounds.Left+gap:bounds.Right-mirror.Width-gap;mirror.Top=cfg.Position=="Top"?bounds.Top+gap:cfg.Position=="Bottom"?bounds.Bottom-mirror.Height-gap:bounds.Top+(bounds.Height-mirror.Height)/2;}
+ void LayoutTaskbarMirror(Window mirror,System.Drawing.Rectangle screenBounds){var bounds=DipBounds(screenBounds);bool vertical=cfg.Position=="Left"||cfg.Position=="Right";mirror.Width=dock.Width;mirror.Height=dock.Height;double gap=cfg.Style=="Hug"?0:cfg.Gap;mirror.Left=cfg.Position=="Left"?bounds.Left+gap:cfg.Position=="Right"?bounds.Right-mirror.Width-gap:bounds.Left+(bounds.Width-mirror.Width)/2;if(!vertical&&cfg.DockAlignment!="Center")mirror.Left=cfg.DockAlignment=="Left"?bounds.Left+gap:bounds.Right-mirror.Width-gap;mirror.Top=cfg.Position=="Top"?bounds.Top+gap:cfg.Position=="Bottom"?bounds.Bottom-mirror.Height-gap:bounds.Top+(bounds.Height-mirror.Height)/2;}
  void UpdateDisplayMirrors(){
   string signature=cfg.MonitorMode+"|"+cfg.TaskbarMonitor+"|"+cfg.TopToolbarMonitor+"|"+String.Join(";",Forms.Screen.AllScreens.Select(x=>x.DeviceName+":"+x.Bounds));
   if(signature!=displayMirrorSignature){CloseDisplayMirrors(topDisplayMirrors);CloseDisplayMirrors(taskbarDisplayMirrors);displayMirrorSignature=signature;}
@@ -55,7 +64,7 @@ namespace Awl { partial class Shell {
   var extraTop=SurfaceUsesAllDisplays("Top toolbar")?Forms.Screen.AllScreens.Where(x=>x!=SurfaceScreen("Top toolbar")).ToArray():new Forms.Screen[0];
   while(topDisplayMirrors.Count<extraTop.Length&&topSource!=null){var mirror=CreateDisplayMirror(topSource,"Awl Status Bar mirror");topDisplayMirrors.Add(mirror);mirror.Show();}
   while(topDisplayMirrors.Count>extraTop.Length){topDisplayMirrors.Last().Close();topDisplayMirrors.RemoveAt(topDisplayMirrors.Count-1);}
-  for(int i=0;i<topDisplayMirrors.Count;i++){var bounds=extraTop[i].Bounds;var mirror=topDisplayMirrors[i];mirror.Left=bounds.Left;mirror.Top=bounds.Top;mirror.Width=bounds.Width;mirror.Height=top.Height;mirror.Visibility=top.Visibility;}
+  for(int i=0;i<topDisplayMirrors.Count;i++){var bounds=DipBounds(extraTop[i].Bounds);var mirror=topDisplayMirrors[i];mirror.Left=bounds.Left;mirror.Top=bounds.Top;mirror.Width=bounds.Width;mirror.Height=top.Height;mirror.Visibility=top.Visibility;}
   var extraTaskbars=SurfaceUsesAllDisplays("Taskbar")?Forms.Screen.AllScreens.Where(x=>x!=SurfaceScreen("Taskbar")).ToArray():new Forms.Screen[0];
   while(taskbarDisplayMirrors.Count<extraTaskbars.Length&&dockSource!=null){var mirror=CreateDisplayMirror(dockSource,"Awl Taskbar mirror");taskbarDisplayMirrors.Add(mirror);mirror.Show();}
   while(taskbarDisplayMirrors.Count>extraTaskbars.Length){taskbarDisplayMirrors.Last().Close();taskbarDisplayMirrors.RemoveAt(taskbarDisplayMirrors.Count-1);}
@@ -65,7 +74,7 @@ namespace Awl { partial class Shell {
   bool duplicate=SurfaceUsesAllDisplays("Widgets")&&clockWidget!=null;var extra=duplicate?Forms.Screen.AllScreens.Where(x=>x!=SurfaceScreen("Widgets")).ToArray():new Forms.Screen[0];var source=clockWidget==null?null:clockWidget.Content as Visual;
   while(widgetDisplayMirrors.Count<extra.Length&&source!=null){var mirror=CreateDisplayMirror(source,"Awl Date & Time mirror");mirror.Topmost=false;widgetDisplayMirrors.Add(mirror);mirror.Show();}
   while(widgetDisplayMirrors.Count>extra.Length){widgetDisplayMirrors.Last().Close();widgetDisplayMirrors.RemoveAt(widgetDisplayMirrors.Count-1);}
-  var primary=SurfaceBounds("Widgets");double relativeX=clockWidget==null?0:clockWidget.Left-primary.Left,relativeY=clockWidget==null?0:clockWidget.Top-primary.Top;
-  for(int i=0;i<widgetDisplayMirrors.Count;i++){var bounds=extra[i].Bounds;var mirror=widgetDisplayMirrors[i];mirror.Width=clockWidget.Width;mirror.Height=clockWidget.Height;mirror.Left=bounds.Left+relativeX*Math.Max(0,bounds.Width-mirror.Width)/Math.Max(1,primary.Width-clockWidget.Width);mirror.Top=bounds.Top+relativeY*Math.Max(0,bounds.Height-mirror.Height)/Math.Max(1,primary.Height-clockWidget.Height);mirror.Visibility=clockWidget.Visibility;}
+  var primary=SurfaceDipBounds("Widgets");double relativeX=clockWidget==null?0:clockWidget.Left-primary.Left,relativeY=clockWidget==null?0:clockWidget.Top-primary.Top;
+  for(int i=0;i<widgetDisplayMirrors.Count;i++){var bounds=DipBounds(extra[i].Bounds);var mirror=widgetDisplayMirrors[i];mirror.Width=clockWidget.Width;mirror.Height=clockWidget.Height;mirror.Left=bounds.Left+relativeX*Math.Max(0,bounds.Width-mirror.Width)/Math.Max(1,primary.Width-clockWidget.Width);mirror.Top=bounds.Top+relativeY*Math.Max(0,bounds.Height-mirror.Height)/Math.Max(1,primary.Height-clockWidget.Height);mirror.Visibility=clockWidget.Visibility;}
  }
 } }
